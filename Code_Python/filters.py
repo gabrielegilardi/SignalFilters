@@ -25,7 +25,6 @@ Notes:
 - non filtered data are set equal to the original input, i.e.
   Y[0:idx-1,:] = X[0:idx-1,:]
 
-
 Filters:
 
 Generic         b,a             Generic case

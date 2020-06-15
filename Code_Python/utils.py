@@ -117,6 +117,7 @@ def plot_signals(signals):
         plt.plot(signal)
 
     plt.grid(b=True)
+    plt.xlim(0, 100)
     plt.show()
 
 
@@ -134,6 +135,7 @@ def plot_frequency_response(b, a=1.0):
     plt.axhline(-3.0, lw=1.5, ls='--', C='r')
     plt.grid(b=True)
     plt.xlim(np.amin(wf), np.amax(wf))
+    # plt.ylim(-40.0, 0.0)
     plt.xlabel('$\omega$ [rad/sample]')
     plt.ylabel('$h$ [db]')
     plt.title('b = ' + np.array_str(np.around(b, decimals=2)) \

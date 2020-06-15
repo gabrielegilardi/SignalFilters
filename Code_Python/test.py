@@ -7,11 +7,13 @@ ToDo:
 - use NaN/input values for points not filtered?
 - return idx?
 - util to test filter (impulse, utils)
-- warning in filter when wrong order?
+- warning in filter when wrong order? or save flag with true/false if computed
 - use self.a and self.b
 - remove a and b from plots
 - in comments write what filters do
 - is necessary to copy X for Y untouched?
+- decide default values in functions
+- check conditions on P and N
 """
 
 import sys
@@ -40,9 +42,15 @@ spx = flt.Filter(data)
 # aa = np.array([1.0, alpha - 1.0])
 
 
-res, bb, aa = spx.GaussHigh(N=3, P=10)
+res, bb, aa = spx.SincFunction(2, 50)
 print(bb)
 print(aa)
-
 utl.plot_frequency_response(bb, aa)
 utl.plot_lag_response(bb, aa)
+
+# res = spx.DecyclerOsc(30, 60)
+# print(res[0:10, :])
+signals = (spx.X, res)
+print(spx.idx)
+utl.plot_signals(signals)
+# print(spx.X[0:20])

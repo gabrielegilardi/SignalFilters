@@ -4,22 +4,22 @@ Filters for time series.
 Copyright (c) 2020 Gabriele Gilardi
 
 ToDo:
-- use NaN/input values for points not filtered?
-- return idx?
-- util to test filter (impulse, utils)
-- warning in filter when wrong order? or save flag with true/false if computed
-- use self.a and self.b
-- remove a and b from plots
 - in comments write what filters do
 - is necessary to copy X for Y untouched?
 - decide default values in functions
 - check conditions on P and N
+- why lag plot gives errors
+- fix plotting function
+- example for alpha-beta-gamma using variable sigma as in financial time series
+  (see Ehler)
+- example using noisy multi-sine-waves
 """
 
 import sys
 import numpy as np
 import filters as flt
 import utils as utl
+import matplotlib.pyplot as plt
 
 # Read data to filter
 if len(sys.argv) != 2:
@@ -42,15 +42,19 @@ spx = flt.Filter(data)
 # aa = np.array([1.0, alpha - 1.0])
 
 
-res, bb, aa = spx.SincFunction(2, 50)
-print(bb)
-print(aa)
-utl.plot_frequency_response(bb, aa)
-utl.plot_lag_response(bb, aa)
+# res, bb, aa = spx.SincFunction(2, 50)
+# print(bb)
+# print(aa)
+# utl.plot_frequency_response(bb, aa)
+# utl.plot_lag_response(bb, aa)
+# sigma_x = 0.1
+# sigma_v = 0.1 * np.ones(n_samples)
+# res = spx.Kalman(sigma_x=sigma_x, sigma_v=sigma_v, dt=1.0, abg_type="abg")
+alpha = 0.5
+beta = 0.005
+gamma = 0.0
+Yc, Yp = spx.ABG(alpha=alpha, beta=beta, gamma=gamma, dt=1.0)
+signals = (spx.data[:, 0], Yc[:, 0], Yp[:, 0])
+utl.plot_signals(signals, 0, 50)
 
-# res = spx.DecyclerOsc(30, 60)
-# print(res[0:10, :])
-signals = (spx.X, res)
-print(spx.idx)
-utl.plot_signals(signals)
-# print(spx.X[0:20])
+

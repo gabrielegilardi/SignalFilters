@@ -63,61 +63,20 @@ def scale_data(X, param=()):
         return Xs, param
 
 
-def calc_rmse(a, b):
-    """
-    Calculates the root-mean-square-error of arrays <a> and <b>. If the arrays
-    are multi-column, the RMSE is calculated as all the columns are one single
-    vector.
-    """
-    # Convert to (n, ) dimension
-    a = a.flatten()
-    b = b.flatten()
-
-    # Root-mean-square-error
-    rmse = np.sqrt(((a - b) ** 2).sum() / len(a))
-
-    return rmse
-
-
-def calc_corr(a, b):
-    """
-    Calculates the correlation between arrays <a> and <b>. If the arrays are
-    multi-column, the correlation is calculated as all the columns are one
-    single vector.
-    """
-    # Convert to (n, ) dimension
-    a = a.flatten()
-    b = b.flatten()
-
-    # Correlation
-    corr = np.corrcoef(a, b)[0, 1]
-
-    return corr
-
-
-def calc_accu(a, b):
-    """
-    Calculates the accuracy (in %) between arrays <a> and <b>. The two arrays
-    must be column/row vectors.
-    """
-    # Convert to (n, ) dimension
-    a = a.flatten()
-    b = b.flatten()
-
-    # Correlation
-    accu = 100.0 * (a == b).sum() / len(a)
-
-    return accu
-
-
-def plot_signals(signals):
+def plot_signals(signals, idx_start=0, idx_end=None):
     """
     """
+    if (idx_end is None):
+        idx_end = len(signals[0])
+    t = np.arange(idx_start, idx_end)
+    names = []
+    count = 0
     for signal in signals:
-        plt.plot(signal)
-
+        plt.plot(t, signal[idx_start:idx_end])
+        names.append(str(count))
+        count += 1
     plt.grid(b=True)
-    plt.xlim(0, 100)
+    plt.legend(names)
     plt.show()
 
 
@@ -138,8 +97,6 @@ def plot_frequency_response(b, a=1.0):
     # plt.ylim(-40.0, 0.0)
     plt.xlabel('$\omega$ [rad/sample]')
     plt.ylabel('$h$ [db]')
-    plt.title('b = ' + np.array_str(np.around(b, decimals=2)) \
-               + ',   a = ' + np.array_str(np.around(a, decimals=2)))
     plt.show()
 
 
@@ -157,128 +114,53 @@ def plot_lag_response(b, a=1.0):
     plt.xlim(np.amin(wf), np.amax(wf))
     plt.xlabel('$\omega$ [rad/sample]')
     plt.ylabel('$gd$ [samples]')
-    plt.title('b = ' + np.array_str(np.around(b, decimals=2)) \
-               + ',   a = ' + np.array_str(np.around(a, decimals=2)))
     plt.show()
 
 
+def synthetic_wave(per, amp=None, pha=None, tim=None):
+    """
+    Generates a multi-sinewave.
+    P = [ P1 P2 ... Pn ]      Periods
+    varargin = A, T, PH       Amplitudes, time, phases
+    A = [ A1 A2 ... An ]      Amplitudes
+    T = [ ts tf dt]           Time info: from ts to tf in dt steps
+    PH = [PH1 PH2 ... PHn]    Phases (rad)
 
-# function [y,t] = interpSignal(x,n1,n2,varargin)
-#   if (nargin == 4)
-#     dt = varargin{1};
-#   else
-#     dt = 20;
-#   end
-#   N = length(x);
-#   Ts = (n2-n1)/(N-1);
-#   n = n1:Ts:n2;
-#   t = n1:Ts/dt:n2;
-#   nt = length(t);
-#   y = zeros(1,nt);
-#   for i = 1:nt
-#     a = x.*sinc( (t(i)-n)/Ts );
-#     y(i) = sum(a);
-#   end
-# end
-
-
-# function [f] = plotFn(type,func,varargin)
-#   % 0     Plot real function 
-#   % 1     Plot real/imag values
-#   % 2     Plot real/imag values in polar form
-#   % 3     Plot magnitude/phase
-
-#   clf
-#   tiny = 1e-7;
-  
-#   % Check if func is a function or data
-#   if ( isa(func,"function_handle") )
-#     N = varargin{1};
-#     n = (0:N-1)';    
-#     f = func(n);
-#   else
-#     N = length(func);
-#     n = (0:N-1)';    
-#     f = func;
-#   end
-
-#   % Clean data
-#   xRe = real(f);  
-#   xIm = imag(f);  
-#   xRe( abs(xRe) < tiny ) = 0;
-#   xIm( abs(xIm) < tiny ) = 0;
-
-#   switch (type)
-
-#     % Plot real function  
-#     case 0    
-      
-#       stem(n,xRe,"b","filled")
-#       xlim([n(1) n(N)])
-#       grid on
-#       xlabel("n")
-#       ylabel("f")
-#       box on
-
-#     % Plot real/imag function
-#     case 1
-#       subplot(2,1,1)
-#       stem(n,xRe,"b","filled")
-#       xlim([n(1) n(N)])
-#       grid on
-#       xlabel("n")
-#       ylabel("Re")
-#       box on
-#       subplot(2,1,2)
-#       stem(n,xIm,"b","filled")
-#       xlim([n(1) n(N)])
-#       grid on
-#       xlabel("n")
-#       ylabel("Im")
-#       box on
-
-#     % Plot real/imag function in polar form
-#     case 2
-#       scatter(xRe,xIm,"b","filled")
-#       maxRe = max( abs(xRe) );
-#       maxIm = max( abs(xIm) );
-#       m = max(maxRe,maxIm);
-#       dx = 2*m/50;
-#       text(xRe+dx,xIm,num2str(n))
-#       xlim( [-m +m ])
-#       ylim( [-m +m ])
-#       axis("square")
-#       grid on
-#       hold on
-#       plot([-m 0; +m 0],[0 -m; 0 +m],"k")
-#       hold off
-#       xlabel("Real")
-#       ylabel("Imag")
-#       box on
-      
-#     % Plot magnitude/phase 
-#     case 3
-#       xMa = sqrt( xRe.^2 + xIm.^2 );  
-#       xAr = atan2(xIm,xRe);
-#       subplot(2,1,1)
-#       stem(n,xMa,"b","filled")
-#       xlim([n(1) n(N)])
-#       grid on
-#       xlabel("n")
-#       ylabel("Magnitude")
-#       box on
-#       subplot(2,1,2)
-#       stem(n,xAr,"b","filled")
-#       xlim([n(1) n(N)])
-#       ylim([-pi pi])
-#       grid on
-#       xlabel("n")
-#       ylabel("Phase [rad]")
-#       box on
+    Av = SUM(1 to n) of [ A*sin(2*pi*f*t + PH) ]
+    Tv   Time (ts to tf with step dt)
     
-#   end
-  
-# end
+    Default amplitudes are ones
+    Default time is from 0 to largest period (1000 steps)
+    Default phases are zeros
+    """
+    n_waves = len(per)
+    per = np.asarray(per)
+
+    # Check for amplitudes, times, and phases
+    if (amp is None):
+        amp = np.ones(n_waves)
+    else:
+        amp = np.asarray(amp)
+    if (tim is None):
+        t_start = 0.0
+        t_end = np.amax(per)
+        n_steps = 500
+    else:
+        t_start = tim[0]
+        t_end = tim[1]
+        n_steps = int(tim[2])
+    if (pha is None):
+        pha = np.zeros(n_waves)
+    else:
+        pha = np.asarray(pha)
+
+    # Add all the waves
+    t = np.linspace(t_start, t_end, num=n_steps)
+    f = np.zeros(len(t))
+    for i in range(n_waves):
+        f = f + amp[i] * np.sin(2.0 * np.pi * t / per[i] + pha[i])
+
+    return t, f
 
 
 # function sP = SyntQT(P,type)
@@ -406,60 +288,5 @@ def plot_lag_response(b, a=1.0):
 # end     % End of function
 
 
-# function [Tv,Av] = SyntWave(P,varargin)
-# %  Function: generate a multi-sinewave
-# %
-# %  Inputs
-# %  ------
-# %  P = [ P1 P2 ... Pn ]      Periods
-# %  varargin = A, T, PH       Amplitudes, time, phases
-# %
-# %  A = [ A1 A2 ... An ]      Amplitudes
-# %  T = [ ts tf dt]           Time info: from ts to tf with step dt
-# %  PH = [PH1 PH2 ... PHn]    Phases (rad)
-# %
-# %  Outputs
-# %  -------
-# %  Av = SUM(1 to n) of [ A*sin(2*pi*f*t + PH) ]
-# %  Tv   Time (ts to tf with step dt)
-# % 
-# %  Default amplitudes are ones
-# %  Default time is from 0 to largest period (1000 steps)
-# %  Default phases are zeros
-
-#   % Check for arguments
-#   if (nargin == 1)
-#     np = length(P);
-#     A = ones(1,np);
-#     T = [0 max(P) max(P)/1000];
-#     PH = zeros(1,np);
-#   elseif (nargin == 2)
-#     np = length(P);
-#     A = varargin{1};
-#     T = [0 max(P) max(P)/1000];
-#     PH = zeros(1,np);
-#   elseif (nargin == 3)
-#     np = length(P);
-#     A = varargin{1};
-#     T = varargin{2};
-#     PH = zeros(1,np);
-#   elseif (nargin == 4)
-#     np = length(P);
-#     A = varargin{1};
-#     T = varargin{2};
-#     PH = varargin{3};
-#   else
-#     fprintf(1,'\n');
-#     error('Wrong number of arguments');
-#   end    
- 
-#   % Add all waves
-#   Tv = T(1):T(3):T(2);
-#   Av = zeros(1,length(Tv));     
-#   for j = 1:np
-#     Av = Av + A(j)*sin(2*pi*Tv/P(j)+PH(j));
-#   end
-  
-# end   % End of function
 
 

@@ -46,6 +46,8 @@ InstTrend       N/alpha         Instantaneous trendline
 SincFunction    N               Sinc function
 Decycler        P               Decycler, 1-GaussHigh (P>=5)
 DecyclerOsc     P1,P2           Decycle oscillator, GH(P1) - GH(P2), (P1>=5)
+ABG
+Kalman
 
 N               Order/smoothing factor/number of previous samples
 alpha           Damping term
@@ -87,12 +89,12 @@ def filter_data(X, b, a):
 
 class Filter:
 
-    def __init__(self, X):
+    def __init__(self, data):
         """
         """
-        self.X = np.asarray(X)
+        self.data = np.asarray(data)
 
-        self.n_samples, self.n_series = X.shape
+        self.n_samples, self.n_series = data.shape
         self.idx = 0
 
     def Generic(self, b=1.0, a=1.0):
@@ -101,7 +103,7 @@ class Filter:
         """
         b = np.asarray(b)
         a = np.asarray(a)
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def SMA(self, N=10):
@@ -110,7 +112,7 @@ class Filter:
         """
         b = np.ones(N) / N
         a = np.array([1.0])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def EMA(self, N=10, alpha=None):
@@ -123,7 +125,7 @@ class Filter:
             alpha = 2.0 / (N + 1.0)
         b = np.array([alpha])
         a = np.array([1.0, -(1.0 - alpha)])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def WMA(self, N=10):
@@ -135,7 +137,7 @@ class Filter:
         w = np.arange(N, 0, -1)
         b = w / np.sum(w)
         a = np.array([1.0])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def MSMA(self, N=10):
@@ -149,7 +151,7 @@ class Filter:
         w[N] = 0.5
         b = w / N
         a = np.array([1.0])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def MLSQ(self, N=5):
@@ -170,11 +172,11 @@ class Filter:
             b = np.array([-11.0, 18.0, 88.0, 138.0, 168.0, 178.0, 168.0,
                           138.0, 88.0, 18.0, -11.0]) / 980.0
         else:
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (wrong N)")
             self.idx = 0
-            return Y
+            return self.data
         a = np.array([1.0])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def ButterOrig(self, N=2, P=10):
@@ -196,10 +198,10 @@ class Filter:
             a = np.array([1.0, - (alpha + beta ** 2.0),
                 (1.0 + alpha) * beta ** 2.0, - beta ** 4.0])
         else:
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (wrong N)")
             self.idx = 0
-            return Y
-        Y, self.idx = filter_data(self.X, b, a)
+            return self.data
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def ButterMod(self, N=2, P=10):
@@ -220,10 +222,10 @@ class Filter:
             a = np.array([1.0, - (alpha + beta ** 2.0),
                 (1.0 + alpha) * beta ** 2.0, - beta ** 4.0])
         else:
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (wrong N)")
             self.idx = 0
-            return Y
-        Y, self.idx = filter_data(self.X, b, a)
+            return self.data
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def SuperSmooth(self, N=2, P=10):
@@ -246,10 +248,10 @@ class Filter:
             a = np.array([1.0, - (alpha + beta ** 2.0),
                 (1.0 + alpha) * beta ** 2.0, - beta ** 4.0])
         else:
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (wrong N)")
             self.idx = 0
-            return Y
-        Y, self.idx = filter_data(self.X, b, a)
+            return self.data
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def GaussLow(self, N=1, P=2):
@@ -259,16 +261,16 @@ class Filter:
         Must be P > 1. If not returns the unfiltered dataset.
         """
         if (P < 2):
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (P < 2)")
             self.idx = 0
-            return Y
+            return self.data
         A = 2.0 ** (1.0 / N) - 1.0
         B = 4.0 * np.sin(np.pi / P) ** 2.0
         C = 2.0 * (np.cos(2.0 * np.pi / P) - 1.0)
         alpha = (-B + np.sqrt(B ** 2.0 - 4.0 * A * C)) / (2.0 * A)
         b = np.array([alpha])
         a = np.array([1.0, - (1.0 - alpha)])
-        Y = self.X.copy()
+        Y = self.data.copy()
         for i in range(N):
             Y, self.idx = filter_data(Y, b, a)
         return Y
@@ -280,16 +282,16 @@ class Filter:
         Must be P > 4. If not returns the unfiltered dataset.
         """
         if (P < 5):
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (P < 5)")
             self.idx = 0
-            return Y
+            return self.data
         A = 2.0 ** (1.0 / N) * np.sin(np.pi / P) ** 2.0 - 1.0
         B = 2.0 * (2.0 ** (1.0 / N) - 1.0) * (np.cos(2.0 * np.pi / P) - 1.0)
         C = - B
         alpha = (-B - np.sqrt(B ** 2.0 - 4.0 * A * C)) / (2.0 * A)
         b = np.array([1.0 - alpha / 2.0, -(1.0 - alpha / 2.0)])
         a = np.array([1.0, - (1.0 - alpha)])
-        Y = self.X - self.X[0, :]
+        Y = self.data - self.data[0, :]
         for i in range(N):
             Y, self.idx = filter_data(Y, b, a)
         return Y
@@ -306,7 +308,7 @@ class Filter:
         alpha = 1.0 / gamma - np.sqrt(1.0 / gamma ** 2 - 1.0)
         b = np.array([(1.0 - alpha) / 2.0, 0.0, - (1.0 - alpha) / 2.0])
         a = np.array([1.0, - beta * (1.0 + alpha), alpha])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def BandStop(self, P=5, delta=0.3):
@@ -322,7 +324,7 @@ class Filter:
         b = np.array([(1.0 + alpha) / 2.0, - beta * (1.0 + alpha),
                       (1.0 + alpha) / 2.0])
         a = np.array([1.0, -beta * (1.0 + alpha), alpha])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def ZEMA1(self, N=10, alpha=None, K=1.0, Vn=5):
@@ -337,7 +339,7 @@ class Filter:
         b[0] = alpha * (1.0 + K)
         b[Vn] = - alpha * K
         a = np.array([1.0, - (1.0 - alpha)])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def ZEMA2(self, N=10, alpha=None, K=1.0):
@@ -350,7 +352,7 @@ class Filter:
             alpha = 2.0 / (N + 1.0)
         b = np.array([alpha * (1.0 + K)])
         a = np.array([1.0, alpha * K - (1.0 - alpha)])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def InstTrend(self, N=10, alpha=None):
@@ -364,7 +366,7 @@ class Filter:
         b = np.array([alpha - alpha ** 2.0 / 4.0, alpha ** 2.0 / 2.0,
                       - alpha + 3.0 * alpha ** 2.0 / 4.0])
         a = np.array([1.0, - 2.0 * (1.0 - alpha), (1.0 - alpha) ** 2.0])
-        Y, self.idx = filter_data(self.X, b, a)
+        Y, self.idx = filter_data(self.data, b, a)
         return Y
 
     def SincFunction(self, N=10, nel=10):
@@ -378,8 +380,8 @@ class Filter:
         k = np.arange(1, nel)
         b[1:] = np.sin(np.pi * k / N) / (np.pi * k)
         a = np.array([1.0])
-        Y, self.idx = filter_data(self.X, b, a)
-        return Y, b, a
+        Y, self.idx = filter_data(self.data, b, a)
+        return Y
 
     def Decycler(self, P=10):
         """
@@ -389,10 +391,10 @@ class Filter:
         Must be P > 4. If not returns the unfiltered dataset.
         """
         if (P < 5):
-            Y = self.X.copy()
+            print("Warning: data returned unfiltered (P < 5)")
             self.idx = 0
-            return Y
-        Y = self.X - self.GaussHigh(N=1, P=P)
+            return self.data
+        Y = self.data - self.GaussHigh(N=1, P=P)
         return Y
 
     def DecyclerOsc(self, P1=5, P2=10):
@@ -405,9 +407,111 @@ class Filter:
         """
         P_low = np.amin([P1, P2])
         P_high = np.amax([P1, P2])
-        if (P1 < 5):
-            Y = self.X.copy()
+        if (P_low < 5):
+            print("Warning: data returned unfiltered (P_low < 5)")
             self.idx = 0
-            return Y
+            return self.data
         Y = self.GaussHigh(N=2, P=P_low) - self.GaussHigh(N=2, P=P_high)
         return Y
+
+    def ABG(self, alpha=0.0, beta=0.0, gamma=0.0, dt=1.0):
+        """
+        alpha-beta-gamma
+
+        For numerical stability: 0 < alpha, beta < 1
+        """
+        # If necessary change scalars to arrays
+        if (np.ndim(alpha) == 0):
+            alpha = np.ones(self.n_samples) * alpha
+        if (np.ndim(beta) == 0):
+            beta = np.ones(self.n_samples) * beta
+        if (np.ndim(gamma) == 0):
+            gamma = np.ones(self.n_samples) * gamma
+        
+        # Initialize
+        Y_corr = self.data.copy()
+        Y_pred = self.data.copy()
+        x0 = self.data[0,:]
+        v0 = np.zeros(self.n_series)
+        a0 = np.zeros(self.n_series)
+        for i in range(1, self.n_samples):
+
+            # Predictor (predicts state in <i>)
+            x_pred = x0 + dt * v0 + 0.5 * a0 * dt ** 2
+            v_pred = v0 + dt * a0
+            a_pred = a0
+            Y_pred[i, :] = x_pred
+
+            # Residual (innovation)
+            r = self.data[i, :] - x_pred
+
+            # Corrector (corrects state in <i>)
+            x_corr = x_pred + alpha[i] * r
+            v_corr = v_pred + (beta[i] / dt) * r
+            a_corr = a_pred + (2.0 * gamma[i] / dt ** 2) *r
+
+            # Save value and prepare next iteration
+            Y_corr[i, :] = x_corr
+            x0 = x_corr
+            v0 = v_corr
+            a0 = a_corr
+        
+        self.idx = 1
+
+        return Y_corr, Y_pred
+
+
+    def Kalman(self, sigma_x, sigma_v, dt, abg_type="abg"):
+        """
+        Steady-state Kalman filter (also limited to one-dimension)
+        """
+        L = (sigma_x / sigma_v) * dt ** 2
+
+        # Alpha filter
+        if (abg_type == 'a'):
+            alpha = (-L ** 2 + np.sqrt(L ** 4 + 16.0 * L ** 2)) / 8.0
+            beta = 0.0
+            gamma = 0.0
+
+        # Alpha-Beta filter
+        elif(abg_type == 'ab'):
+            r = (4.0 + L - np.sqrt(8.0 * L + L ** 2)) / 4.0
+            alpha = 1.0 - r ** 2
+            beta = 2.0 * (2.0 - alpha) - 4.0 * np.sqrt(1.0 - alpha)
+            gamma = 0.0
+        
+        #Alpha-Beta-Gamma filter
+        else:
+            b = (L / 2.0) - 3.0
+            c = (L / 2.0) + 3.0
+            d = -1.0
+            p = c - b **2 /3.0
+            q = 2.0 * b **3 /27.0 - b * c /3.0  + d
+            v = np.sqrt(q ** 2 + 4.0 * p ** 3 / 27.0)
+            z = - (q + v / 2.0) ** (1.0 / 3.0)
+            s = z - p / (3.0 * z) - b / 3.0
+            alpha = 1.0 - s ** 2
+            beta = 2.0 * (1 - s) ** 2
+            gamma = beta ** 2 / (2.0 * alpha)
+
+        # Apply filter
+        Y = self.abg(alpha=alpha, beta=beta, gamma=gamma, dt=dt)
+
+        return Y
+
+"""
+correction = update = measurement
+prediction = motion
+
+X       (n_states, 1)           State estimate
+P       (n_states, n_states)    Covariance estimate
+F       (n_states, n_states)    State transition model
+Z       (n_obs, 1)              Observations
+H       (n_obs, n_states)       Observation model
+R       (n_obs, n_obs)          Covariance of the observation noise
+S       (n_obs, n_obs)          Covariance of the observation residual
+K       (n_states, n_obs)       Optimal Kalman gain
+Q       (n_states, n_states)    Covariance of the process noise matrix
+Y       (n_obs, 1)              Observation residual (innovation)
+
+"""

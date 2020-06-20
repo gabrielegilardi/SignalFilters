@@ -117,176 +117,76 @@ def plot_lag_response(b, a=1.0):
     plt.show()
 
 
-def synthetic_wave(per, amp=None, pha=None, tim=None):
+def synthetic_wave(P, A=None, PH=None, num=1000):
     """
     Generates a multi-sinewave.
     P = [ P1 P2 ... Pn ]      Periods
-    varargin = A, T, PH       Amplitudes, time, phases
     A = [ A1 A2 ... An ]      Amplitudes
-    T = [ ts tf dt]           Time info: from ts to tf in dt steps
     PH = [PH1 PH2 ... PHn]    Phases (rad)
 
-    Av = SUM(1 to n) of [ A*sin(2*pi*f*t + PH) ]
-    Tv   Time (ts to tf with step dt)
-    
     Default amplitudes are ones
-    Default time is from 0 to largest period (1000 steps)
     Default phases are zeros
+    Time is from 0 to largest period (default 1000 steps)
     """
-    n_waves = len(per)
-    per = np.asarray(per)
+    n_waves = len(P)
+    P = np.asarray(P)
 
-    # Check for amplitudes, times, and phases
-    if (amp is None):
-        amp = np.ones(n_waves)
+    # Define amplitudes and phases
+    if (A is None):
+        A = np.ones(n_waves)
     else:
-        amp = np.asarray(amp)
-    if (tim is None):
-        t_start = 0.0
-        t_end = np.amax(per)
-        n_steps = 500
+        A = np.asarray(A)
+    if (PH is None):
+        PH = np.zeros(n_waves)
     else:
-        t_start = tim[0]
-        t_end = tim[1]
-        n_steps = int(tim[2])
-    if (pha is None):
-        pha = np.zeros(n_waves)
-    else:
-        pha = np.asarray(pha)
+        PH = np.asarray(PH)
 
     # Add all the waves
-    t = np.linspace(t_start, t_end, num=n_steps)
+    t = np.linspace(0.0, np.amax(P), num=num)
     f = np.zeros(len(t))
     for i in range(n_waves):
-        f = f + amp[i] * np.sin(2.0 * np.pi * t / per[i] + pha[i])
+        f = f + A[i] * np.sin(2.0 * np.pi * t / P[i] + PH[i])
 
     return t, f
 
 
-# function sP = SyntQT(P,type)
-# %  Function: generate a random (synthetic) price curve
-# %
-# %  Inputs
-# %  ------
-# %  P        prices (for type equal to 'P' and 'R')
-# %           normal distribution data (for type equal to 'N')
-# %             P(1) = mean
-# %             P(2) = std
-# %             P(3) = length
-# %  type     type of generation
-# %             P    use returns from price 
-# %             R    use returns normal distribution
-# %             N    use specified normal distribution
-# %
-# %  Output
-# %  ------
-# %  sP       generated synthetic prices
+def synthetic_series(data, multivariate=False):
+    """
+    """
+    n_samples, n_series = data.shape
 
-#   % Check for number of arguments
-#   if (nargin ~= 2)
-#     fprintf(1,'\n');
-#     error('Wrong number of arguments');
-#   end
+    # The number of samples must be odd (if the number is even drop the last value)
+    if ((n_samples % 2) == 0):
+        print("Warning: data reduced by one (even number of samples)")
+        n_samples = n_samples - 1
+        data = data[0:n_samples, :]
 
-#   switch(type)
-  
-#     % Use actual returns from P to generate values 
-#     case 'P'
-#       R = Price2ret(P,'S');       % "simple" method
-#       sR = phaseran(R,1);
-    
-#     % Use normal distribution to generate values
-#     % (mean and std are from the actual returns of P)
-#     case 'R'
-#       R = Price2ret(P,'S');       % "simple" method
-#       sR = normrnd(mean(R),std(R),length(R),1);
-    
-#     % Use defined normal distribution to generate values
-#     % P(1)=mean, P(2)=std, P(3)=length
-#     case 'N'
-#       sR = normrnd(P(1),P(2),P(3),1);
+    # FFT of the original data
+    data_fft = np.fft.fft(data, axis=0)
 
-#     otherwise
-#       fprintf(1,'\n');
-#       error('Type not recognized');
-  
-#   end
-  
-#   % Use 'simple' method and P0 = 1 to determine price
-#   sP = Ret2price(sR,'S');  
-  
-# end      % End of function
+    # Parameters
+    half_len = (n_samples - 1) // 2
+    idx1 = np.arange(1, half_len+1, dtype=int)
+    idx2 = np.arange(half_len+1, n_samples, dtype=int)
 
+    # If multivariate the random phases is the same
+    if (multivariate):
+        phases = np.random.rand(half_len, 1)
+        phases1 = np.tile(np.exp(2.0 * np.pi * 1j * phases), (1, n_series))
+        phases2 = np.conj(np.flipud(phases1))
 
-# % Input data
-# % ----------
-# % recblk: is a 2D array. Row: time sample. Column: recording.
-# % An odd number of time samples (height) is expected. If that is not
-# % the case, recblock is reduced by 1 sample before the surrogate
-# % data is created.
-# % The class must be double and it must be nonsparse.
+    # If univariate the random phases is different
+    else:
+        phases = np.random.rand(half_len, n_series)
+        phases1 = np.exp(2.0 * np.pi * 1j * phases)
+        phases2 = np.conj(np.flipud(phases1))
 
-# % nsurr: is the number of image block surrogates that you want to 
-# % generate.
- 
-# % Output data
-# % ---------------------
-# % surrblk: 3D multidimensional array image block with the surrogate
-# % datasets along the third dimension
+    # FFT of the synthetic data
+    synt_fft = data_fft.copy()
+    synt_fft[idx1, :] = data_fft[idx1, :] * phases1
+    synt_fft[idx2, :] = data_fft[idx2, :] * phases2
 
-# % Example 1
-# % ---------
-# %   x = randn(31,4);
-# %   x(:,4) = sum(x,2); % Create correlation in the data
-# %   r1 = corrcoef(x) 
-# %   surr = phaseran(x,10);
-# %   r2 = corrcoef(surr(:,:,1)) % Check that the correlation is preserved
+    # Inverse FFT of the synthetic data
+    synt_data = np.real(np.fft.ifft(synt_fft, axis=0))
 
-# %   Carlos Gias
-# %   Date: 21/08/2011
-
-# % Reference:
-# % Prichard, D., Theiler, J. Generating Surrogate Data for Time Series
-# % with Several Simultaneously Measured Variables (1994)
-# % Physical Review Letters, Vol 73, Number 7
-
-# function surrblk = phaseran(recblk,nsurr)
-
-#   % Get parameters
-#   [nfrms,nts] = size(recblk);
-#   if ( rem(nfrms,2) == 0 )
-#     nfrms = nfrms-1;
-#     recblk = recblk(1:nfrms,:);
-#   end
-    
-#   % Get parameters
-#   len_ser = (nfrms-1)/2;
-#   interv1 = 2:len_ser+1; 
-#   interv2 = len_ser+2:nfrms;
-
-#   % Fourier transform of the original dataset
-#   fft_recblk = fft(recblk);
-
-#   % Create the surrogate recording blocks one by one
-#   surrblk = zeros(nfrms,nts,nsurr);
-#   for k = 1:nsurr
-#     ph_rnd = rand([len_ser 1]);
-   
-#     % Create the random phases for all the time series
-#     ph_interv1 = repmat(exp(2*pi*1i*ph_rnd),1,nts);
-#     ph_interv2 = conj(flipud( ph_interv1));
-   
-#     % Randomize all the time series simultaneously
-#     fft_recblk_surr = fft_recblk;
-#     fft_recblk_surr(interv1,:) = fft_recblk(interv1,:).*ph_interv1;
-#     fft_recblk_surr(interv2,:) = fft_recblk(interv2,:).*ph_interv2;
-   
-#     % Inverse transform
-#     surrblk(:,:,k)= real(ifft(fft_recblk_surr));
-#   end
-  
-# end     % End of function
-
-
-
-
+    return synt_data

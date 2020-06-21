@@ -4,9 +4,7 @@ Utility functions for ????.
 Copyright (c) 2020 Gabriele Gilardi
 """
 
-from scipy import signal
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def normalize_data(X, param=(), ddof=0):
@@ -63,61 +61,61 @@ def scale_data(X, param=()):
         return Xs, param
 
 
-def plot_signals(signals, idx_start=0, idx_end=None):
+def value2diff(X, mode=None):
     """
+    from value to difference in abs or %
+    diff in value first element is zero
+    diff in % first element is one
     """
-    if (idx_end is None):
-        idx_end = len(signals[0])
-    t = np.arange(idx_start, idx_end)
-    names = []
-    count = 0
-    for signal in signals:
-        plt.plot(t, signal[idx_start:idx_end])
-        names.append(str(count))
-        count += 1
-    plt.grid(b=True)
-    plt.legend(names)
-    plt.show()
+
+    # Difference in value
+    if (mode == 'V'):
+        dX = np.zeros_like(X)
+        dX[1:, :] = X[1:, :] - X[:-1, :]
+    
+    # Difference in percent
+    else:
+        dX = np.ones_like(X)
+        dX[1:, :] = X[1:, :] / X[:-1, :] - 1.0
+    
+    return dX
 
 
-def plot_frequency_response(b, a=1.0):
+def diff2value(dX, mode=None):
     """
+    from difference in abs or % to value (first row should be all zeros but
+    will be over-written
+
+    Reference X[0,:] is assumed to be zero. If X0[0,:] is the desired
+    reference, the actual vector X can be determined as X0+X
+
+    Reference X[0,:] is assumed to be one. If X0[0,:] is the desired
+    reference, the actual vector X can be determined as X0*X
     """
-    b = np.asarray(b)
-    a = np.asarray(a)
-
-    w, h = signal.freqz(b, a)
-    h_db = 20.0 * np.log10(abs(h))
-    wf = w / (2.0 * np.pi)
-
-    plt.plot(wf, h_db)
-    plt.axhline(-3.0, lw=1.5, ls='--', C='r')
-    plt.grid(b=True)
-    plt.xlim(np.amin(wf), np.amax(wf))
-    # plt.ylim(-40.0, 0.0)
-    plt.xlabel('$\omega$ [rad/sample]')
-    plt.ylabel('$h$ [db]')
-    plt.show()
-
-
-def plot_lag_response(b, a=1.0):
-    """
-    """
-    b = np.asarray(b)
-    a = np.asarray(a)
-
-    w, gd = signal.group_delay((b, a))
-    wf = w / (2.0 * np.pi)
-
-    plt.plot(wf, gd)
-    plt.grid(b=True)
-    plt.xlim(np.amin(wf), np.amax(wf))
-    plt.xlabel('$\omega$ [rad/sample]')
-    plt.ylabel('$gd$ [samples]')
-    plt.show()
+    # Value from the difference (first row equal to zero)
+    # X[0, :] = 0
+    # X[1, :] = X[0, :] + dX[1, :] = dX[1, :]
+    # X[2, :] = X[0, :] + dX[1, :] + dX[2, :] = dX[1, :] + dX[2, :]
+    # ....
+    if (mode == 'V'):
+        X = np.zeros_like(dX)
+        X[1:, :] = np.cumsum(dX[1:, :], axis=0)
+    
+    # Value from percent (first row equal to 1)
+    # X[0, :] = 1
+    # X[1, :] = X[0, :] * (1 + dX[1, :]) = (1 + dX[1, :])
+    # X[2, :] = X[1, :] * (1 + dX[2, :])
+    #         = X[0, :] * (1 + dX[1, :]) * (1 + dX[2, :])
+    #         = (1 + dX[1, :]) * (1 + dX[2, :])
+    # ....
+    else:
+        X = np.ones_like(dX)
+        X[1:, :] = np.cumprod((1.0 + dX), axis=0)
+    
+    return X
 
 
-def synthetic_wave(P, A=None, PH=None, num=1000):
+def synthetic_wave(per, amp=None, pha=None, num=1000):
     """
     Generates a multi-sinewave.
     P = [ P1 P2 ... Pn ]      Periods
@@ -128,29 +126,29 @@ def synthetic_wave(P, A=None, PH=None, num=1000):
     Default phases are zeros
     Time is from 0 to largest period (default 1000 steps)
     """
-    n_waves = len(P)
-    P = np.asarray(P)
+    n_waves = len(per)
+    per = np.asarray(per)
 
     # Define amplitudes and phases
-    if (A is None):
-        A = np.ones(n_waves)
+    if (amp is None):
+        amp = np.ones(n_waves)
     else:
-        A = np.asarray(A)
-    if (PH is None):
-        PH = np.zeros(n_waves)
+        amp = np.asarray(amp)
+    if (pha is None):
+        pha = np.zeros(n_waves)
     else:
-        PH = np.asarray(PH)
+        pha = np.asarray(pha)
 
     # Add all the waves
-    t = np.linspace(0.0, np.amax(P), num=num)
+    t = np.linspace(0.0, np.amax(per), num=num)
     f = np.zeros(len(t))
     for i in range(n_waves):
-        f = f + A[i] * np.sin(2.0 * np.pi * t / P[i] + PH[i])
+        f = f + amp[i] * np.sin(2.0 * np.pi * t / per[i] + pha[i])
 
     return t, f
 
 
-def synthetic_series(data, multivariate=False):
+def synthetic_series(X, multiv=False):
     """
     """
     n_samples, n_series = data.shape
@@ -159,10 +157,10 @@ def synthetic_series(data, multivariate=False):
     if ((n_samples % 2) == 0):
         print("Warning: data reduced by one (even number of samples)")
         n_samples = n_samples - 1
-        data = data[0:n_samples, :]
+        X = X[0:n_samples, :]
 
     # FFT of the original data
-    data_fft = np.fft.fft(data, axis=0)
+    X_fft = np.fft.fft(X, axis=0)
 
     # Parameters
     half_len = (n_samples - 1) // 2
@@ -170,7 +168,7 @@ def synthetic_series(data, multivariate=False):
     idx2 = np.arange(half_len+1, n_samples, dtype=int)
 
     # If multivariate the random phases is the same
-    if (multivariate):
+    if (multiv):
         phases = np.random.rand(half_len, 1)
         phases1 = np.tile(np.exp(2.0 * np.pi * 1j * phases), (1, n_series))
         phases2 = np.conj(np.flipud(phases1))
@@ -182,11 +180,11 @@ def synthetic_series(data, multivariate=False):
         phases2 = np.conj(np.flipud(phases1))
 
     # FFT of the synthetic data
-    synt_fft = data_fft.copy()
-    synt_fft[idx1, :] = data_fft[idx1, :] * phases1
-    synt_fft[idx2, :] = data_fft[idx2, :] * phases2
+    synt_fft = X_fft.copy()
+    synt_fft[idx1, :] = X_fft[idx1, :] * phases1
+    synt_fft[idx2, :] = X_fft[idx2, :] * phases2
 
     # Inverse FFT of the synthetic data
-    synt_data = np.real(np.fft.ifft(synt_fft, axis=0))
+    X_synt = np.real(np.fft.ifft(synt_fft, axis=0))
 
-    return synt_data
+    return X_synt

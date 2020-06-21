@@ -13,13 +13,18 @@ ToDo:
 - example for alpha-beta-gamma using variable sigma as in financial time series
   (see Ehler)
 - example using noisy multi-sine-waves
+- synt: boot, paper Vinod (as a class?)
+- vectors must be ( .., 1)
+- reduce the vector diff by one and pass initial value
+  (with zero/one as default)
 """
 
 import sys
 import numpy as np
-import filters as flt
-import utils as utl
 import matplotlib.pyplot as plt
+
+import filters as flt
+import synthetic as syn
 
 # Read data to filter
 if len(sys.argv) != 2:
@@ -34,7 +39,7 @@ data = data.reshape(n_samples, -1)
 
 np.random.seed(1294404794)
 
-spx = flt.Filter(data)
+# spx = flt.Filter(data)
 
 # res, bb, aa = spx.SincFunction(2, 50)
 # print(bb)
@@ -55,21 +60,26 @@ spx = flt.Filter(data)
 # plt.plot(t,f)
 # plt.show()
 aa = np.array([
-        [0.8252,    0.2820],
-        [1.3790,   0.0335],
-        [-1.0582,   -1.3337],
-        [-0.4686,    1.1275],
-        [-0.2725,    0.3502],
-        [1.0984,   -0.2991],
-        [-0.2779,    0.0229],
-        [0.7015,   -0.2620],
-        [-2.0518,   -1.7502],
-        [-0.3538,   -0.2857],
-        [-0.8236,   -0.8314],
-        [-1.5771,   -0.9792],
-        [0.5080,   -1.1564]])
-synt_aa = utl.synthetic_series(data, False)
-plt.plot(synt_aa)
-plt.plot(data)
-plt.show()
-
+        [ 0.8252,  0.2820],
+        [ 1.3790,  0.0335],
+        [-1.0582, -1.3337],
+        [-0.4686,  1.1275],
+        [-0.2725,  0.3502],
+        [ 1.0984, -0.2991],
+        [-0.2779,  0.0229],
+        [ 0.7015, -0.2620],
+        [-2.0518, -1.7502],
+        [-0.3538, -0.2857],
+        [-0.8236, -0.8314],
+        [-1.5771, -0.9792],
+        [ 0.5080, -1.1564]])
+# synt_aa = utl.synthetic_series(data, False)
+# plt.plot(synt_aa)
+# plt.plot(data)
+# plt.show()
+print(data[0:10, :])
+bb = syn.value2diff(data, mode='V')
+print(bb[0:10, :])
+bb[0, 0] = 1399.48
+cc = syn.diff2value(bb, mode='V')
+print(cc[0:10, :])

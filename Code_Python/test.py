@@ -15,8 +15,6 @@ ToDo:
 - example using noisy multi-sine-waves
 - synt: boot, paper Vinod (as a class?)
 - vectors must be ( .., 1)
-- reduce the vector diff by one and pass initial value
-  (with zero/one as default)
 """
 
 import sys
@@ -56,30 +54,48 @@ np.random.seed(1294404794)
 # signals = (spx.data[:, 0], Yc[:, 0], Yp[:, 0])
 # utl.plot_signals(signals, 0, 50)
 
-# t, f = utl.synthetic_wave([1., 2., 3.], A=None, PH=None, num=30)
+# t, f = syn.synthetic_wave([1., 2., 3.], A=None, phi=None, num=100)
 # plt.plot(t,f)
 # plt.show()
-aa = np.array([
-        [ 0.8252,  0.2820],
-        [ 1.3790,  0.0335],
-        [-1.0582, -1.3337],
-        [-0.4686,  1.1275],
-        [-0.2725,  0.3502],
-        [ 1.0984, -0.2991],
-        [-0.2779,  0.0229],
-        [ 0.7015, -0.2620],
-        [-2.0518, -1.7502],
-        [-0.3538, -0.2857],
-        [-0.8236, -0.8314],
-        [-1.5771, -0.9792],
-        [ 0.5080, -1.1564]])
-# synt_aa = utl.synthetic_series(data, False)
-# plt.plot(synt_aa)
+# aa = np.array([
+#         [ 0.8252,  0.2820],
+#         [ 1.3790,  0.0335],
+#         [-1.0582, -1.3337],
+#         [-0.4686,  1.1275],
+#         [-0.2725,  0.3502],
+#         [ 1.0984, -0.2991],
+#         [-0.2779,  0.0229],
+#         [ 0.7015, -0.2620],
+#         [-2.0518, -1.7502],
+#         [-0.3538, -0.2857],
+#         [-0.8236, -0.8314],
+#         [-1.5771, -0.9792],
+#         [ 0.5080, -1.1564]])
+# synt_data1 = syn.synthetic_FFT(data, False)
+# synt_data2 = syn.synthetic_FFT(data, False)
+# plt.plot(synt_data1)
+# plt.plot(synt_data2)
 # plt.plot(data)
+# names = ['syn1', 'syn2', 'spx']
+# plt.legend(names)
 # plt.show()
-print(data[0:10, :])
-bb = syn.value2diff(data, mode='V')
-print(bb[0:10, :])
-bb[0, 0] = 1399.48
-cc = syn.diff2value(bb, mode='V')
-print(cc[0:10, :])
+# percent = False
+# print(data[0:10, :])
+# bb = syn.value2diff(data, percent)
+# print(bb[0:10, :])
+# cc = syn.diff2value(bb, percent)
+# print(cc[0:10, :]+1399.48)
+# aa = np.arange(10,28).reshape(6,3)
+# print(aa)
+# idx = np.zeros_like(aa)
+# bb = np.zeros_like(aa)
+# for i in range(aa.shape[1]):
+#     idx[:, i] = np.random.permutation(aa.shape[0])
+# print(idx)
+# i = np.arange(aa.shape[1])
+# bb[:, i] = aa[idx[:, i], i]
+# bb = syn.synthetic_boot(aa, replace=False)
+# print(bb)
+aa = np.array([4, 12, 36, 20, 8]).reshape(5, 1)
+# print(aa)
+syn.synthetic_MEboot(aa)

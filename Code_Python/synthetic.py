@@ -61,97 +61,101 @@ def scale_data(X, param=()):
         return Xs, param
 
 
-def value2diff(X, mode=None):
+def value2diff(X, percent=True):
     """
     from value to difference in abs or %
-    diff in value first element is zero
-    diff in % first element is one
+    dx is reduced by 1 row
     """
-
-    # Difference in value
-    if (mode == 'V'):
-        dX = np.zeros_like(X)
-        dX[1:, :] = X[1:, :] - X[:-1, :]
-    
     # Difference in percent
+    if (percent):
+        dX = X[1:, :] / X[:-1, :] - 1.0
+    
+    # Difference in value
     else:
-        dX = np.ones_like(X)
-        dX[1:, :] = X[1:, :] / X[:-1, :] - 1.0
+        dX = X[1:, :] - X[:-1, :]
     
     return dX
 
 
-def diff2value(dX, mode=None):
+def diff2value(dX, percent=True):
     """
-    from difference in abs or % to value (first row should be all zeros but
-    will be over-written
+    from difference in abs or % to value
+    X is increased by one row
 
-    Reference X[0,:] is assumed to be zero. If X0[0,:] is the desired
-    reference, the actual vector X can be determined as X0+X
+    Value from percent: first row set to one. If X0 defines the starting
+    values, then X0*X would be the ???
 
-    Reference X[0,:] is assumed to be one. If X0[0,:] is the desired
-    reference, the actual vector X can be determined as X0*X
+    Value from difference: first row set to zero. If X0 defines the starting
+    values, then X0+X would be the ???
     """
-    # Value from the difference (first row equal to zero)
-    # X[0, :] = 0
-    # X[1, :] = X[0, :] + dX[1, :] = dX[1, :]
-    # X[2, :] = X[0, :] + dX[1, :] + dX[2, :] = dX[1, :] + dX[2, :]
-    # ....
-    if (mode == 'V'):
-        X = np.zeros_like(dX)
-        X[1:, :] = np.cumsum(dX[1:, :], axis=0)
-    
-    # Value from percent (first row equal to 1)
+    n_rows, n_cols = dX.shape
+    X = np.zeros((n_rows+1, n_cols))
+
+    # Value from percent
     # X[0, :] = 1
     # X[1, :] = X[0, :] * (1 + dX[1, :]) = (1 + dX[1, :])
     # X[2, :] = X[1, :] * (1 + dX[2, :])
     #         = X[0, :] * (1 + dX[1, :]) * (1 + dX[2, :])
     #         = (1 + dX[1, :]) * (1 + dX[2, :])
     # ....
-    else:
-        X = np.ones_like(dX)
+    if (percent):
+        X[0, :] = 1.0
         X[1:, :] = np.cumprod((1.0 + dX), axis=0)
+    
+    # Value from difference
+    # X[0, :] = 0
+    # X[1, :] = X[0, :] + dX[1, :] = dX[1, :]
+    # X[2, :] = X[0, :] + dX[1, :] + dX[2, :] = dX[1, :] + dX[2, :]
+    # ....
+    else:
+        # First row already set to zero
+        X[1:, :] = np.cumsum(dX, axis=0)
     
     return X
 
 
-def synthetic_wave(per, amp=None, pha=None, num=1000):
+def synthetic_wave(P, A=None, phi=None, num=1000):
     """
     Generates a multi-sinewave.
-    P = [ P1 P2 ... Pn ]      Periods
-    A = [ A1 A2 ... An ]      Amplitudes
-    PH = [PH1 PH2 ... PHn]    Phases (rad)
+    P = [P_1, P_2, ... P_n]                 Periods
+    A = [A_1, A_2, ... A_n]                 Amplitudes
+    phi = [phi_1, phi_2, ... phi_n]         Phases (rad)
 
     Default amplitudes are ones
     Default phases are zeros
     Time is from 0 to largest period (default 1000 steps)
     """
-    n_waves = len(per)
-    per = np.asarray(per)
+    n_waves = len(P)
+    P = np.asarray(P)
 
-    # Define amplitudes and phases
-    if (amp is None):
-        amp = np.ones(n_waves)
+    # Define amplitudes
+    if (A is None):
+        A = np.ones(n_waves)
     else:
-        amp = np.asarray(amp)
-    if (pha is None):
-        pha = np.zeros(n_waves)
+        A = np.asarray(A)
+
+    # Define phases
+    if (phi is None):
+        phi = np.zeros(n_waves)
     else:
-        pha = np.asarray(pha)
+        phi = np.asarray(phi)
 
     # Add all the waves
-    t = np.linspace(0.0, np.amax(per), num=num)
+    t = np.linspace(0.0, np.amax(P), num=num)
     f = np.zeros(len(t))
     for i in range(n_waves):
-        f = f + amp[i] * np.sin(2.0 * np.pi * t / per[i] + pha[i])
+        f = f + A[i] * np.sin(2.0 * np.pi * t / P[i] + phi[i])
 
     return t, f
 
 
-def synthetic_series(X, multiv=False):
+def synthetic_FFT(X, multiv=False):
     """
+    - univariate and single time-series
+    - univariate and multi-time series (can be used to generate multi from same)
+    - multi-variate multi-time series
     """
-    n_samples, n_series = data.shape
+    n_samples, n_series = X.shape
 
     # The number of samples must be odd (if the number is even drop the last value)
     if ((n_samples % 2) == 0):
@@ -188,3 +192,69 @@ def synthetic_series(X, multiv=False):
     X_synt = np.real(np.fft.ifft(synt_fft, axis=0))
 
     return X_synt
+
+
+def synthetic_sampling(X, replace=True):
+    """
+    generate more than n_samples?
+    """
+    n_samples, n_series = X.shape
+    X_synt = np.zeros_like(X)
+
+    # Sampling with replacement
+    if (replace):
+        idx = np.random.randint(0, n_samples, size=(n_samples, n_series))
+        i = np.arange(n_series)
+        X_synt[:, i] = X[idx[:, i], i]
+
+    # Sampling without replacement
+    else:
+        idx = np.zeros_like(X)
+        for j in range(n_series):
+            idx[:, j] = np.random.permutation(n_samples)
+        i = np.arange(n_series)
+        X_synt[:, i] = X[idx[:, i], i]
+
+    return X_synt
+
+
+def synthetic_MEboot(X, alpha=0.1):
+    """
+    """
+    n_samples, n_series = X.shape
+    X_synt = np.zeros_like(X)
+
+    # Loop over time-series
+    n = n_samples
+    for ts in range(n_series):
+        
+        # Sort the time series keeping track of the original position
+        idx = np.argsort(X[:, ts])
+        Y = X[idx, ts]
+        print(idx, idx.shape)
+        print(Y, Y.shape)
+
+        # Compute the trimmed mean
+        g = int(np.floor(n * alpha))
+        r = n * alpha - g
+        print(n, g, r)
+        m_trm = ((1.0 - r) * (Y[g] + Y[n-g-1]) + Y[g+1:n-g-1].sum()) \
+                 / (n * (1.0 - 2.0 * alpha))
+        print(m_trm)
+
+        # Compute the intermediate points
+        Z = np.zeros(n+1)
+        Z[1:-1] = (Y[0:-1] + Y[1:]) / 2.0
+        Z[0] = Y[0] - m_trm
+        Z[n] = Y[n-1] + m_trm
+        print(Z, Z.shape)
+
+        # Compute the interval means
+        mt = np.zeros(n)
+        mt[0] = 0.75 * Y[0] + 0.25 * Y[1]
+        mt[1:n-1] = 0.25 * Y[0:n-2] + 0.5 * Y[1:n-1] + 0.25 * Y[2:n]
+        mt[n-1] = 0.25 * Y[n-2] + 0.75 * Y[n-1]
+        print(mt)
+
+
+

@@ -13,8 +13,8 @@ ToDo:
 - example for alpha-beta-gamma using variable sigma as in financial time series
   (see Ehler)
 - example using noisy multi-sine-waves
-- synt: boot, paper Vinod (as a class?)
 - vectors must be ( .., 1)
+- synt remove multi-series unless multi-variate and add number of istances (fft 3 D)
 """
 
 import sys
@@ -97,5 +97,5 @@ np.random.seed(1294404794)
 # bb = syn.synthetic_boot(aa, replace=False)
 # print(bb)
 aa = np.array([4, 12, 36, 20, 8]).reshape(5, 1)
-# print(aa)
-syn.synthetic_MEboot(aa)
+W = syn.synthetic_MEboot(aa, alpha=0.1)
+# print(bb.sum())

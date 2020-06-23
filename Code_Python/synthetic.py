@@ -154,6 +154,10 @@ def synthetic_FFT(X, multiv=False):
     - univariate and single time-series
     - univariate and multi-time series (can be used to generate multi from same)
     - multi-variate multi-time series
+
+    generate more than n_samples, remome multi-time series for uni-variate
+    use 3d matrix looping on the time-series for multi-variate
+
     """
     n_samples, n_series = X.shape
 
@@ -196,7 +200,7 @@ def synthetic_FFT(X, multiv=False):
 
 def synthetic_sampling(X, replace=True):
     """
-    generate more than n_samples?
+    generate more than n_samples, remome multi-time series
     """
     n_samples, n_series = X.shape
     X_synt = np.zeros_like(X)
@@ -231,30 +235,53 @@ def synthetic_MEboot(X, alpha=0.1):
         # Sort the time series keeping track of the original position
         idx = np.argsort(X[:, ts])
         Y = X[idx, ts]
-        print(idx, idx.shape)
-        print(Y, Y.shape)
 
-        # Compute the trimmed mean
+        # Compute the trimmed mean 
+        # trimmed_mean = np.abs(np.diff(x)).mean()
         g = int(np.floor(n * alpha))
         r = n * alpha - g
-        print(n, g, r)
         m_trm = ((1.0 - r) * (Y[g] + Y[n-g-1]) + Y[g+1:n-g-1].sum()) \
                  / (n * (1.0 - 2.0 * alpha))
-        print(m_trm)
 
         # Compute the intermediate points
         Z = np.zeros(n+1)
-        Z[1:-1] = (Y[0:-1] + Y[1:]) / 2.0
         Z[0] = Y[0] - m_trm
+        Z[1:-1] = (Y[0:-1] + Y[1:]) / 2.0
         Z[n] = Y[n-1] + m_trm
-        print(Z, Z.shape)
 
         # Compute the interval means
         mt = np.zeros(n)
         mt[0] = 0.75 * Y[0] + 0.25 * Y[1]
         mt[1:n-1] = 0.25 * Y[0:n-2] + 0.5 * Y[1:n-1] + 0.25 * Y[2:n]
         mt[n-1] = 0.25 * Y[n-2] + 0.75 * Y[n-1]
-        print(mt)
 
+        # Randomly generate new points
+        t_w = np.random.rand(n)
+        # t_w = np.array([0.12, 0.83, 0.53, 0.59, 0.11])
 
+# order here???? and remove correction inside intervals???
 
+        # Interpolate new points
+        t = np.linspace(0.0, 1.0, num=n+1)
+        w_int = np.interp(t_w, t, Z)
+        print('w_int=', w_int)
+
+        # Correct the new points to satisfy mass constraint
+        idw = (np.floor_divide(t_w, 1.0 / n)).astype(int)
+        print('idw=', idw)
+        w_corr = w_int + mt[idw] - (Z[idw] + Z[idw+1]) / 2.0
+        print('w_corr', w_corr)
+
+        # Enforce limits
+        # w_corr = np.fmin(np.fmax(w_corr, Z[0]), Z[n])
+
+        # Re-order sampled values
+        w_ord = np.sort(w_corr)
+        # print(w_ord)
+        # w_ord = np.array([5.85,  6.7,  8.9,  10.7,  23.95])
+
+        # Recovery the time-dependencies
+        W = np.zeros(n)
+        W[idx] = w_ord
+
+        return W

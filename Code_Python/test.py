@@ -4,10 +4,10 @@ Filters for time series.
 Copyright (c) 2020 Gabriele Gilardi
 
 ToDo:
+- add comments to the code
 - in comments write what filters do
 - is necessary to copy X for Y untouched?
 - decide default values in functions
-- check conditions on P and N
 - why lag plot gives errors
 - fix plotting function
 - example for alpha-beta-gamma using variable sigma as in financial time series
@@ -96,6 +96,19 @@ np.random.seed(1294404794)
 # bb[:, i] = aa[idx[:, i], i]
 # bb = syn.synthetic_boot(aa, replace=False)
 # print(bb)
-aa = np.array([4, 12, 36, 20, 8]).reshape(5, 1)
-W = syn.synthetic_MEboot(aa, alpha=0.1)
+# aa = np.array([4, 12, 36, 20, 8]).reshape(5, 1)
+# W = syn.synthetic_MEboot(aa, alpha=0.1, bounds=False, scale=True)
 # print(bb.sum())
+# print('W=', W)
+
+n = 8
+aa = np.arange(n).reshape(n,1) * 1.1
+print(aa)
+idx = np.random.randint(0, n, size=(n, 3))
+print(idx)
+i = np.arange(3)
+# print(i)
+bb = np.tile(aa,(1, 3))
+# print(bb)
+cc = bb[idx, i]
+print(cc)

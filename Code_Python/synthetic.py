@@ -198,37 +198,39 @@ def synthetic_FFT(X, multiv=False):
     return X_synt
 
 
-def synthetic_sampling(X, replace=True):
+def synthetic_sampling(X, n_reps=1, replace=True):
     """
-    generate more than n_samples, remome multi-time series
+    X must be (n_samples, 1)
     """
-    n_samples, n_series = X.shape
-    X_synt = np.zeros_like(X)
+    n_samples = X.shape[0]
 
     # Sampling with replacement
     if (replace):
-        idx = np.random.randint(0, n_samples, size=(n_samples, n_series))
-        i = np.arange(n_series)
-        X_synt[:, i] = X[idx[:, i], i]
+        idx = np.random.randint(0, n_samples, size=(n_samples, n_reps))
+        i = np.arange(n_reps)
+        Xe = np.tile(X,(1, n_reps))
+        X_synt = Xe[idx, i]
 
     # Sampling without replacement
     else:
-        idx = np.zeros_like(X)
-        for j in range(n_series):
+        idx = np.zeros(n_samples, n_reps)
+        for j in range(n_reps):
             idx[:, j] = np.random.permutation(n_samples)
-        i = np.arange(n_series)
-        X_synt[:, i] = X[idx[:, i], i]
+        i = np.arange(n_reps)
+        Xe = np.tile(X,(1, n_reps))
+        X_synt = Xe[idx, i]
 
     return X_synt
 
 
-def synthetic_MEboot(X, alpha=0.1):
+def synthetic_MEboot(X, alpha=0.1, bounds=True, scale=False):
     """
     """
     n_samples, n_series = X.shape
     X_synt = np.zeros_like(X)
 
-    # Loop over time-series
+    # Loop over time-series iterate over number of desired series or set parallel
+    # if possile
     n = n_samples
     for ts in range(n_series):
         
@@ -256,32 +258,40 @@ def synthetic_MEboot(X, alpha=0.1):
         mt[n-1] = 0.25 * Y[n-2] + 0.75 * Y[n-1]
 
         # Randomly generate new points
-        t_w = np.random.rand(n)
-        # t_w = np.array([0.12, 0.83, 0.53, 0.59, 0.11])
-
-# order here???? and remove correction inside intervals???
+        # t_w = np.random.rand(n)
+        t_w = np.array([0.12, 0.83, 0.53, 0.59, 0.11])
+        t_w = np.sort(t_w)
 
         # Interpolate new points
         t = np.linspace(0.0, 1.0, num=n+1)
         w_int = np.interp(t_w, t, Z)
-        print('w_int=', w_int)
 
-        # Correct the new points to satisfy mass constraint
+        # Correct the new points (first and last interval) to satisfy mass constraint
         idw = (np.floor_divide(t_w, 1.0 / n)).astype(int)
-        print('idw=', idw)
-        w_corr = w_int + mt[idw] - (Z[idw] + Z[idw+1]) / 2.0
-        print('w_corr', w_corr)
+        corr = np.where(idw == 0, mt[idw] - (Z[idw] + Z[idw+1]) / 2.0, 0.0)
+        w_corr = w_int + corr
+        if (n > 1):
+            corr = np.where(idw == n-1, mt[idw] - (Z[idw] + Z[idw+1]) / 2.0, 0.0)
+            w_corr += corr
 
         # Enforce limits
-        # w_corr = np.fmin(np.fmax(w_corr, Z[0]), Z[n])
+        if (bounds):
+            w_corr = np.fmin(np.fmax(w_corr, Z[0]), Z[n])
 
-        # Re-order sampled values
-        w_ord = np.sort(w_corr)
-        # print(w_ord)
-        # w_ord = np.array([5.85,  6.7,  8.9,  10.7,  23.95])
+        # Recovery the time-dependencies (done all togheter?)
+        X_synt = np.zeros(n)
+        X_synt[idx] = w_corr
 
-        # Recovery the time-dependencies
-        W = np.zeros(n)
-        W[idx] = w_ord
+        # Scale (done all together?)
+        if (scale):
+            var_Z = np.diff(Z) ** 2.0 / 12.0
+            X_mean = X.mean(axis=0)
+            var_ME = (((mt - X_mean) ** 2).sum() + var_Z.sum()) / n
+            std_X= X.std(axis=0, ddof=1)
+            std_ME = np.sqrt(var_ME)
+            k_scale = std_X / std_ME - 1.0
+            X_synt = X_synt + k_scale * (X_synt - X_mean)
 
-        return W
+        return X_synt
+
+

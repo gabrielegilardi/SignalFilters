@@ -1,20 +1,14 @@
 """
-Filters for time series.
+Signal Filtering/Smoothing and Generation of Synthetic Time-Series.
 
 Copyright (c) 2020 Gabriele Gilardi
+
 
 ToDo:
 - add comments to the code
 - in comments write what filters do
 - is necessary to copy X for Y untouched?
 - decide default values in functions
-- why lag plot gives errors
-- fix plotting function
-- example for alpha-beta-gamma using variable sigma as in financial time series
-  (see Ehler)
-- example using noisy multi-sine-waves
-- vectors must be ( .., 1)
-- synt remove multi-series unless multi-variate and add number of istances (fft 3 D)
 """
 
 import sys
@@ -24,26 +18,32 @@ import matplotlib.pyplot as plt
 import filters as flt
 import synthetic as syn
 
+# Added to avoid message warning "The group delay is singular at frequencies
+# [....], setting to 0" when plotting the lag for SMA filters. 
+np.seterr(all='ignore')
+np.random.seed(1294404794)
+
 # Read data to filter
 if len(sys.argv) != 2:
     print("Usage: python test.py <data_file>")
     sys.exit(1)
 data_file = sys.argv[1] + '.csv'
 
-# Read data from a csv file
+# Read data from a csv file (one time-series each column)
 data = np.loadtxt(data_file, delimiter=',')
-n_samples = data.shape[0]
-data = data.reshape(n_samples, -1)
 
-np.random.seed(1294404794)
+t, f = syn.synthetic_wave([1., 2., 3.], A=None, phi=None, num=1000)
+plt.plot(t,f)
+plt.show()
 
 # spx = flt.Filter(data)
+# res = spx.EMA(N=10)
+# signals = [spx.data, res[0:400]]
+# flt.plot_signals(signals, start=100)
 
-# res, bb, aa = spx.SincFunction(2, 50)
-# print(bb)
-# print(aa)
-# utl.plot_frequency_response(bb, aa)
-# utl.plot_lag_response(bb, aa)
+# spx.plot_frequency()
+# spx.plot_lag()
+
 # sigma_x = 0.1
 # sigma_v = 0.1 * np.ones(n_samples)
 # res = spx.Kalman(sigma_x=sigma_x, sigma_v=sigma_v, dt=1.0, abg_type="abg")
@@ -71,8 +71,9 @@ np.random.seed(1294404794)
 #         [-0.8236, -0.8314],
 #         [-1.5771, -0.9792],
 #         [ 0.5080, -1.1564]])
-# synt_data1 = syn.synthetic_FFT(data, False)
-# synt_data2 = syn.synthetic_FFT(data, False)
+# synt_data = syn.synthetic_FFT(aa[0:5,0], n_reps=1)
+# print(synt_data)
+
 # plt.plot(synt_data1)
 # plt.plot(synt_data2)
 # plt.plot(data)
@@ -85,30 +86,14 @@ np.random.seed(1294404794)
 # print(bb[0:10, :])
 # cc = syn.diff2value(bb, percent)
 # print(cc[0:10, :]+1399.48)
-# aa = np.arange(10,28).reshape(6,3)
-# print(aa)
-# idx = np.zeros_like(aa)
-# bb = np.zeros_like(aa)
-# for i in range(aa.shape[1]):
-#     idx[:, i] = np.random.permutation(aa.shape[0])
-# print(idx)
+
 # i = np.arange(aa.shape[1])
 # bb[:, i] = aa[idx[:, i], i]
-# bb = syn.synthetic_boot(aa, replace=False)
+# aa = np.array([4, 12, 36, 20, 8])
+# bb = syn.synthetic_sampling(aa, n_reps=2, replace=True)
 # print(bb)
-# aa = np.array([4, 12, 36, 20, 8]).reshape(5, 1)
-# W = syn.synthetic_MEboot(aa, alpha=0.1, bounds=False, scale=True)
-# print(bb.sum())
-# print('W=', W)
+# aa = np.array([4, 12, 36, 20, 8])
+# W = syn.synthetic_MEboot(aa, n_reps=1, alpha=0.1, bounds=False, scale=False)
+# print('W=')
+# print(W)
 
-n = 8
-aa = np.arange(n).reshape(n,1) * 1.1
-print(aa)
-idx = np.random.randint(0, n, size=(n, 3))
-print(idx)
-i = np.arange(3)
-# print(i)
-bb = np.tile(aa,(1, 3))
-# print(bb)
-cc = bb[idx, i]
-print(cc)

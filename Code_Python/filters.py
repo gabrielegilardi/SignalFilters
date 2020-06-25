@@ -1,12 +1,7 @@
 """
-Class for filter/smooth data.
+Signal Filtering/Smoothing and Generation of Synthetic Time-Series.
 
 Copyright (c) 2020 Gabriele Gilardi
-
-
-References (both from John F. Ehlers):
-[1] "Cycle Analytics for Traders: Advanced Technical Trading Concepts".
-[2] "Signal Analysis, Filters And Trading Strategies".
 
 
 X           (n_samples, n_series)       Dataset to filter
@@ -75,23 +70,26 @@ Y       (n_obs, 1)              Observation residual (innovation)
 
 import numpy as np
 from scipy import signal
+import matplotlib.pyplot as plt
 
 
-def plot_signals(signals, idx_start=0, idx_end=None):
+def plot_signals(signals, start=0):
     """
-    signals must be all same lenght
+    signals must be a list
     """
-    if (idx_end is None):
-        idx_end = len(signals[0])
-    t = np.arange(idx_start, idx_end)
-    names = []
+    legend = []
     count = 0
     for signal in signals:
-        plt.plot(t, signal[idx_start:idx_end])
-        names.append(str(count))
+        signal = signal.flatten()
+        end = len(signal)
+        t = np.arange(start, end)
+        plt.plot(t, signal[start:end])
+        legend.append('Signal [' + str(count) + ']')
         count += 1
+    plt.xlabel('Index')
+    plt.ylabel('Value')
     plt.grid(b=True)
-    plt.legend(names)
+    plt.legend(legend)
     plt.show()
 
 
@@ -99,22 +97,23 @@ def filter_data(data, b, a):
     """
     Applies a filter with transfer response coefficients <a> and <b>.
     """
-    n_samples, n_series = data.shape
+    n_samples = len(data)
     nb = len(b)
     na = len(a)
     idx = np.amax([0, nb-1, na-1])
     Y = data.copy()
 
     for i in range(idx, n_samples):
-        tmp = np.zeros(n_series)
+
+        tmp = 0
 
         for j in range(nb):
-            tmp = tmp + b[j] * data[i-j, :]            # Numerator term
+            tmp += b[j] * data[i-j]         # Numerator term
 
         for j in range(1, na):
-            tmp = tmp - a[j] * Y[i-j, :]            # Denominator term
+            tmp -= a[j] * Y[i-j]            # Denominator term
 
-        Y[i, :] = tmp / a[0]
+        Y[i] = tmp / a[0]
 
     return Y, idx
 
@@ -125,7 +124,7 @@ class Filter:
         """
         """
         self.data = np.asarray(data)
-        self.n_samples, self.n_series = data.shape
+        self.n_samples = len(data)
 
     def Generic(self, b=1.0, a=1.0):
         """
@@ -577,8 +576,10 @@ class Filter:
         plt.axhline(-3.0, lw=1.5, ls='--', C='r')
         plt.grid(b=True)
         plt.xlim(np.amin(wf), np.amax(wf))
-        plt.xlabel('$omega$ [rad/sample]')
+        plt.xlabel(r'$\omega$ [rad/sample]')
         plt.ylabel('$h$ [db]')
+        legend = ['Filter', '-3dB']
+        plt.legend(legend)
         plt.show()
 
     def plot_lag(self):
@@ -589,6 +590,6 @@ class Filter:
         plt.plot(wf, gd)
         plt.grid(b=True)
         plt.xlim(np.amin(wf), np.amax(wf))
-        plt.xlabel('$omega$ [rad/sample]')
+        plt.xlabel(r'$\omega$ [rad/sample]')
         plt.ylabel('$gd$ [samples]')
         plt.show()

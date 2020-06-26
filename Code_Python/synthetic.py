@@ -49,14 +49,12 @@ def synthetic_wave(P, A=None, phi=None, num=1000):
 def synthetic_FFT(X, n_reps=1):
     """
     Generates surrogates of the time-serie X using the phase-randomized
-    Fourier-transform algorithm.
+    Fourier-transform algorithm. Input X needs to be a 1D array.
 
     X           (n, )               Original time-series
     X_fft       (n, )               FFT of the original time-series
     X_synt_fft  (n_reps, n)         FFT of the synthetic time-series
     X_synt      (n_reps, n)         Synthetic time-series
-
-    Input array X needs to be a 1D array (of any shape).
     """
     X = X.flatten()             # Reshape to (n, )
     n = len(X)
@@ -82,7 +80,7 @@ def synthetic_FFT(X, n_reps=1):
 
     # FFT of the synthetic time-series (1st sample is unchanged)
     X_synt_fft = np.zeros((n_reps, n), dtype=complex)
-    X_synt_fft[:, 0] = X_fft[0]                   
+    X_synt_fft[:, 0] = X_fft[0]
     X_synt_fft[:, idx1] = X_fft[idx1] * phases1         # 1st half
     X_synt_fft[:, idx2] = X_fft[idx2] * phases2         # 2nd half
 
@@ -95,13 +93,11 @@ def synthetic_FFT(X, n_reps=1):
 def synthetic_sampling(X, n_reps=1, replace=True):
     """
     Generates surrogates of the time-serie X using randomized-sampling
-    (bootstrap) with or without replacement.
+    (bootstrap) with or without replacement. Input X needs to be a 1D array.
 
     X           (n, )               Original time-series
     idx         (n_reps, n)         Random index of X
     X_synt      (n_reps, n)         Synthetic time-series
-
-    Input array X needs to be a 1D array (of any shape).
     """
     X = X.flatten()             # Reshape to (n, )
     n = len(X)
@@ -123,7 +119,7 @@ def synthetic_sampling(X, n_reps=1, replace=True):
 def synthetic_MEboot(X, n_reps=1, alpha=0.1, bounds=False, scale=False):
     """
     Generates surrogates of the time-serie X using the maximum entropy
-    bootstrap algorithm.
+    bootstrap algorithm. Input X needs to be a 1D array.
 
     X       (n, )           Original time-series
     idx     (n, )           Original order of X
@@ -135,8 +131,6 @@ def synthetic_MEboot(X, n_reps=1, alpha=0.1, bounds=False, scale=False):
     w_corr  (n_reps, n)     Interpolated new points with corrections for first
                             and last interval
     X_synt  (n_reps, n)     Synthetic time-series
-
-    Input array X needs to be a 1D array (of any shape).
     """
     X = X.flatten()             # Reshape to (n, )
     n = len(X)
@@ -259,16 +253,16 @@ def value2diff(X, percent=True):
     """
     Returns the 1st discrete difference of array X.
 
-    X           (n, )           Original dataset
+    X           (n, )           Input dataset
     dX          (n-1, )         1st discrete differences
-    
+
     Notes:
     - the discrete difference can be calculated in percent or in value.
-    - array dX is one element shorter than array X.
-    - array X needs to be a 1D array (of any shape).
+    - dX is one element shorter than X.
+    - X needs to be a 1D array.
     """
     X = X.flatten()             # Reshape to (n, )
-    
+
     # Discrete difference in percent
     if (percent):
         dX = X[1:] / X[:-1] - 1.0
@@ -282,36 +276,39 @@ def value2diff(X, percent=True):
 
 def diff2value(dX, X0, percent=True):
     """
-    Returns array X from the 1st discrete difference.
+    Returns array X from the 1st discrete difference using X0 as initial value.
 
     dX          (n, )           Discrete differences
     X0          scalar          Initial value
-    X           (n+1, )         Original dataset  ?????
-    
+    X           (n+1, )         Output dataset
+
     Notes:
     - the discrete difference can be in percent or in value.
-    - array X is one element longer than array dX.
-    - array dX needs to be a 1D array (of any shape).
+    - X is one element longer than dX.
+    - dX needs to be a 1D array.
 
-    If the discrete difference is in percent, the first column of X is set to
-    one. The original array is X[0] * X
+    If the discrete difference is in percent:
+        X[0] = X0
+        X[1] = X[0] * (1 + dX[0])
+        X[2] = X[1] * (1 + dX[1]) = X[0] * (1 + dX[0]) * (1 + dX[1])
+        ....
 
-    If the discrete difference is in value, the first column of X is set to
-    zero.  X0+X 
-    - array X needs to be a 1D array (of any shape).
+    If the discrete difference is in value:
+        X[0] = X0
+        X[1] = X[0] + dX[0]
+        X[2] = X[1] + dX[1] = X[0] + dX[0] + dX[1]
+        ....
     """
-    dX = dX.flatten()             # Reshape to (n, )
-    n = len(dX)
-    X = np.zeros(n+1)
+    dX = dX.flatten()               # Reshape to (n, )
+    X = np.zeros(len(dX) + 1)
+    X[0] = X0                       # Initial value
 
     # Discrete difference in percent
     if (percent):
-        X[0] = X0
-        X[1:] = np.cumprod(1.0 + dX) * X0  # !!!! check
+        X[1:] = X0 * np.cumprod(1.0 + dX)
 
     # Discrete difference in value
     else:
-        X[0] = X0
-        X[1:] = np.cumsum(dX) + X0      # !!!!!c check
+        X[1:] = X0 + np.cumsum(dX)
 
     return X

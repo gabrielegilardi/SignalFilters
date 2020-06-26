@@ -5,10 +5,10 @@ Copyright (c) 2020 Gabriele Gilardi
 
 
 ToDo:
-- add comments to the code
-- in comments write what filters do
-- is necessary to copy X for Y untouched?
-- decide default values in functions
+- do examples and check type (low pass, etc)
+- put type in description
+- see paper ZEMA for tests
+- check results with ML
 """
 
 import sys
@@ -31,18 +31,21 @@ data_file = sys.argv[1] + '.csv'
 
 # Read data from a csv file (one time-series each column)
 data = np.loadtxt(data_file, delimiter=',')
+print(data.shape)
 
-t, f = syn.synthetic_wave([1., 2., 3.], A=None, phi=None, num=1000)
-plt.plot(t,f)
-plt.show()
+# t, f = syn.synthetic_wave([1., 2., 3.], A=None, phi=None, num=1000)
+# plt.plot(t,f)
+# plt.show()
 
-# spx = flt.Filter(data)
+spx = flt.Filter(data)
 # res = spx.EMA(N=10)
 # signals = [spx.data, res[0:400]]
-# flt.plot_signals(signals, start=100)
+# flt.plot_signals(signals, ['SPX', 'SMA'])
 
-# spx.plot_frequency()
-# spx.plot_lag()
+res = spx.BandPass(P=10, delta=0.3)
+
+spx.plot_frequency()
+spx.plot_lag()
 
 # sigma_x = 0.1
 # sigma_v = 0.1 * np.ones(n_samples)

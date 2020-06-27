@@ -1,5 +1,5 @@
 """
-Signal Filtering/Smoothing and Generation of Synthetic Time-Series.
+Signal Filtering and Generation of Synthetic Time-Series.
 
 Copyright (c) 2020 Gabriele Gilardi
 
@@ -17,12 +17,12 @@ na              Number of coefficients in array <a>
 Notes:
 - the filter is applied starting from index idx = MAX(0, nb-1, na-1).
 - non filtered data are set equal to the input, i.e. Y[0:idx-1] = X[0:idx-1]
-- X needs to be a 1D array.
+- X must be a 1D array.
 
 
 Filter list:
 -----------
-Generic         b,              Generic
+Generic         b, a            Generic filter
 SMA             N               Simple moving average
 EMA             N/alpha         Exponential moving average
 WMA             N               Weighted moving average
@@ -66,10 +66,11 @@ from scipy import signal
 import matplotlib.pyplot as plt
 
 
-def plot_signals(signals, names=None, start=0):
+def plot_signals(signals, names=None, start=0, end=None):
     """
     Plot the signals specified in list <signals> with their names specified in
-    list <names>. Each signal is plotted in its full length.
+    list <names>. Each signal is plotted in its full length unless differently
+    specified.
     """
     # Identify the signals by index if their name is not specified
     if (names is None):
@@ -79,12 +80,12 @@ def plot_signals(signals, names=None, start=0):
         legend = names
 
     # Loop over the signals
+    t_max = 0
     for signal in signals:
 
         signal = signal.flatten()
-        end = len(signal)
-        t = np.arange(start, end)
-        plt.plot(t, signal[start:end])
+        t_max = np.amax([t_max, len(signal)])
+        plt.plot(signal)
 
         # If no name is given use the list index to identify the signals
         if (names is None):
@@ -96,6 +97,10 @@ def plot_signals(signals, names=None, start=0):
     plt.ylabel('Value')
     plt.grid(b=True)
     plt.legend(legend)
+    if (end is None):
+        plt.xlim(start, t_max)
+    else:
+        plt.xlim(start, end)
     plt.show()
 
 
@@ -315,7 +320,7 @@ class Filter:
 
         elif (N == 3):
             beta = np.exp(-np.pi / P)
-            alpha = 2.0 * beta * np.cos(1.738 * np.pi / P)
+            alpha = 2.0 * beta * np.cos(np.sqrt(3.0) * np.pi / P)
             wb = np.array([1.0, 1.0]) \
                  * (1.0 - alpha * (1.0 - beta ** 2.0) - beta ** 4.0) / 2.0
             wa = np.array([1.0, - (alpha + beta ** 2.0),
@@ -376,7 +381,7 @@ class Filter:
 
         self.b = np.array([1.0 - alpha / 2.0, -(1.0 - alpha / 2.0)])
         self.a = np.array([1.0, - (1.0 - alpha)])
-        Y = self.data - self.data[0, :]
+        Y = self.data - self.data[0]            # Shift to zero
         for i in range(N):
             Y, self.idx = filter_data(Y, self.b, self.a)
 
@@ -481,7 +486,7 @@ class Filter:
 
         K = np.arange(1, nel)
         w = np.zeros(nel)
-        w[0] = 1.0 / N
+        w[0] = 1.0 / P
         w[1:] = np.sin(np.pi * K / P) / (np.pi * K)
 
         self.b = w
@@ -534,7 +539,7 @@ class Filter:
         or an array with one value for each sample. For numerical stability it
         should be 0 < alpha, beta < 1.
         """
-        n_samples = len(data)
+        n_samples = len(self.data)
         Y = np.zeros(n_samples)
 
         # Change scalar arguments to arrays if necessary
@@ -615,20 +620,27 @@ class Filter:
             gamma = (beta ** 2.0) / (2.0 * alpha)
 
         # Apply the alpha-beta-gamma filter
-        Y = self.abg(alpha=alpha, beta=beta, gamma=gamma, dt=dt)
+        Y = self.ABG(alpha=alpha, beta=beta, gamma=gamma, dt=dt)
 
         return Y
 
-    def plot_frequency(self):
+    def plot_response(self):
         """
-        Plots the frequency response (in decibels) of the filter with transfer
-        response coefficients <b> and <a>.
+        Plots the frequency response (in decibels) and the lag (group delay)
+        of the filter with coefficients <b> and <a>.
         """
+        # Frequency response
         w, h = signal.freqz(self.b, self.a)
         h_db = 20.0 * np.log10(np.abs(h))       # Convert to decibels
-        wf = w / (2.0 * np.pi)                  # Scale to [0, 0.5]
 
-        # Plot and format
+        # Lag / Group delay
+        w, gd = signal.group_delay((self.b, self.a))
+
+        # Scale frequency to [0, 0.5]
+        wf = w / (2.0 * np.pi)
+
+        # Plot and format frequency response
+        plt.subplot(1, 2, 1)
         plt.plot(wf, h_db)
         plt.axhline(-3.0, lw=1.5, ls='--', C='r')   # -3 dB (50% power loss)
         plt.grid(b=True)
@@ -637,20 +649,16 @@ class Filter:
         plt.ylabel('$h$ [db]')
         legend = ['Filter', '-3dB']
         plt.legend(legend)
-        plt.show()
+        plt.title('Frequency Response', fontweight="bold")
 
-    def plot_lag(self):
-        """
-        Plots the lag (group delay) of the filter with transfer response
-        coefficients <b> and <a>.
-        """
-        w, gd = signal.group_delay((self.b, self.a))
-        wf = w / (2.0 * np.pi)                  # Scale to [0, 0.5]
-
-        # Plot and format
+        # Plot and format lag/group delay
+        plt.subplot(1, 2, 2)
         plt.plot(wf, gd)
         plt.grid(b=True)
         plt.xlim(np.amin(wf), np.amax(wf))
         plt.xlabel(r'$\omega$ [rad/sample]')
         plt.ylabel('$gd$ [samples]')
+        plt.title('Lag / Group Delay', fontweight="bold")
+
+        # Show plots
         plt.show()

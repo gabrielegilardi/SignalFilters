@@ -1,5 +1,5 @@
 """
-Signal Filtering/Smoothing and Generation of Synthetic Time-Series.
+Signal Filtering and Generation of Synthetic Time-Series.
 
 Copyright (c) 2020 Gabriele Gilardi
 """
@@ -9,7 +9,7 @@ import numpy as np
 
 def synthetic_wave(P, A=None, phi=None, num=1000):
     """
-    Generates a multi-sine wave given a periods, amplitudes, and phases.
+    Generates a multi-sine wave given periods, amplitudes, and phases.
 
     P           (n, )               Periods
     A           (n, )               Amplitudes
@@ -46,10 +46,36 @@ def synthetic_wave(P, A=None, phi=None, num=1000):
     return t, f
 
 
+def synthetic_sampling(X, n_reps=1, replace=True):
+    """
+    Generates surrogates of the time-series X using randomized-sampling
+    (bootstrap) with or without replacement. Input X must be a 1D array.
+
+    X           (n, )               Original time-series
+    idx         (n_reps, n)         Random index of X
+    X_synt      (n_reps, n)         Synthetic time-series
+    """
+    X = X.flatten()             # Reshape to (n, )
+    n = len(X)
+
+    # Sampling with replacement
+    if (replace):
+        idx = np.random.randint(0, n, size=(n_reps, n))
+
+    # Sampling without replacement
+    else:
+        idx = np.argsort(np.random.rand(n_reps, n), axis=1)
+
+    # Synthetic time-series
+    X_synt = X[idx]
+
+    return X_synt
+
+
 def synthetic_FFT(X, n_reps=1):
     """
-    Generates surrogates of the time-serie X using the phase-randomized
-    Fourier-transform algorithm. Input X needs to be a 1D array.
+    Generates surrogates of the time-series X using the phase-randomized
+    Fourier-transform algorithm. Input X must be a 1D array.
 
     X           (n, )               Original time-series
     X_fft       (n, )               FFT of the original time-series
@@ -90,36 +116,10 @@ def synthetic_FFT(X, n_reps=1):
     return X_synt
 
 
-def synthetic_sampling(X, n_reps=1, replace=True):
-    """
-    Generates surrogates of the time-serie X using randomized-sampling
-    (bootstrap) with or without replacement. Input X needs to be a 1D array.
-
-    X           (n, )               Original time-series
-    idx         (n_reps, n)         Random index of X
-    X_synt      (n_reps, n)         Synthetic time-series
-    """
-    X = X.flatten()             # Reshape to (n, )
-    n = len(X)
-
-    # Sampling with replacement
-    if (replace):
-        idx = np.random.randint(0, n, size=(n_reps, n))
-
-    # Sampling without replacement
-    else:
-        idx = np.argsort(np.random.rand(n_reps, n), axis=1)
-
-    # Synthetic time-series
-    X_synt = X[idx]
-
-    return X_synt
-
-
 def synthetic_MEboot(X, n_reps=1, alpha=0.1, bounds=False, scale=False):
     """
-    Generates surrogates of the time-serie X using the maximum entropy
-    bootstrap algorithm. Input X needs to be a 1D array.
+    Generates surrogates of the time-series X using the maximum entropy
+    bootstrap algorithm. Input X must be a 1D array.
 
     X       (n, )           Original time-series
     idx     (n, )           Original order of X
@@ -259,7 +259,7 @@ def value2diff(X, percent=True):
     Notes:
     - the discrete difference can be calculated in percent or in value.
     - dX is one element shorter than X.
-    - X needs to be a 1D array.
+    - X must be a 1D array.
     """
     X = X.flatten()             # Reshape to (n, )
 
@@ -276,7 +276,7 @@ def value2diff(X, percent=True):
 
 def diff2value(dX, X0, percent=True):
     """
-    Returns array X from the 1st discrete difference using X0 as initial value.
+    Rebuilds array X from the 1st discrete difference using X0 as initial value.
 
     dX          (n, )           Discrete differences
     X0          scalar          Initial value
@@ -285,7 +285,7 @@ def diff2value(dX, X0, percent=True):
     Notes:
     - the discrete difference can be in percent or in value.
     - X is one element longer than dX.
-    - dX needs to be a 1D array.
+    - dX must be a 1D array.
 
     If the discrete difference is in percent:
         X[0] = X0

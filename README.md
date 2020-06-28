@@ -49,7 +49,7 @@
 
 `data_file` File with the dataset (csv format). The extension is added automatically.
 
-`X` Dataset to filter/time-series (input). It must be a 1D array, i.e. of shape `(:, )` or `(:, 1)` or `(1, :)`.
+`X` Dataset to filter/time-series (input). It must be a 1D array, i.e. of shape `(:, )`,  `(:, 1)`, or `(1, :)`.
 
 `b` Transfer response coefficients (numerator).
 

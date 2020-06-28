@@ -8,14 +8,14 @@ References
 ----------
 
 - John F. Ehlers, "Cycle Analytics for Traders: Advanced Technical Trading
-  Concepts", @ www.mesasoftware.com/ehlers_books.htm.
+  Concepts", @ http://www.mesasoftware.com/ehlers_books.htm.
 
 - D. Prichard and J. Theiler, "Generating surrogate data for time series with
   several simultaneously measured variables",
-  @ journals.aps.org/prl/abstract/10.1103/PhysRevLett.73.951.
+  @ https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.73.951.
 
 - H. Vinod and J. Lopez-de-Lacalle, "Maximum entropy bootstrap for time series:
-  the meboot R package, @ www.jstatsoft.org/article/view/v029i05.
+  the meboot R package, @ https://www.jstatsoft.org/article/view/v029i05.
 
 Characteristics
 ---------------
@@ -67,7 +67,7 @@ data_file
     File with the dataset (csv format). The extension is added automatically.
 X
     Dataset to filter/time-series (input). It must be a 1D array, i.e. of shape
-    (:, ) or (:, 1) or (1, :).
+    (:, ), (:, 1), or (1, :).
 b
     Transfer response coefficients (numerator).
 a

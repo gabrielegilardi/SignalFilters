@@ -22,7 +22,7 @@ Characteristics
 - The code has been written and tested in Python 3.7.7.
 - Implementation of several digital signal filters and functions for the
   generation of synthetic (surrogate) time-series.
-- Filter list (file <filters.py>):
+- Filters (file <filters.py>):
     Generic             Generic filter
     SMA                 Simple moving average
     EMA                 Exponential moving average
@@ -75,7 +75,7 @@ a
 Y
     Filtered dataset (output).
 X_synt
-    Surrogate/synthetic generated time-series (output)
+    Surrogate/synthetic generated time-series (output).
 n_reps
     Number of surrogates/synthetic time-series to generate.
 
@@ -87,14 +87,14 @@ results are shown in file <Results_Examples.pdf>.
 - Filter: example showing filtering using an EMA, a Butterworth modified
   filter, and a type 2 Zero-lag EMA.
 
-- Kalman: example showing filtering using the three types of Kalman filter,
-  alpha, alpha-beta, and alpha-beta-gamma.
+- Kalman: example showing filtering using the three types of Kalman filter
+  (alpha, alpha-beta, and alpha-beta-gamma).
 
 - FFT_boot: example showing the generation of surrogates time-series using
-  the Fourier-transform algorithm and the discrete differences.
+  the Fourier-transform algorithm and discrete differences.
 
 - ME_boot: example showing the generation of surrogates time-series using the
-  using maximum entropy bootstrap algorithm and the discrete differences.
+  maximum entropy bootstrap algorithm and discrete differences.
 
 - Response: example showing the frequency response and lag/group delay for a
   band-pass filter.

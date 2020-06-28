@@ -12,7 +12,7 @@
 
 - The code has been written and tested in Python 3.7.7.
 - Implementation of several digital signal filters and functions for the generation of synthetic (surrogate) time-series.
-- Filter list (*filters.py*):
+- Filters (*filters.py*):
   - **Generic** Generic filter.
   - **SMA** Simple moving average.
   - **EMA** Exponential moving average.
@@ -57,20 +57,20 @@
 
 `Y` Filtered dataset (output).
 
-`X_synt` Surrogate/synthetic generated time-series (output)
+`X_synt` Surrogate/synthetic generated time-series (output).
 
 `n_reps` Number of surrogates/synthetic time-series to generate.
 
 ## Examples
 
-There are five examples (all of them use the dataset in *spx.csv*). The results are shown [here](Results_Examples.pdf).
+There are five examples (all of them use the dataset in *spx.csv*). The results are shown [here](Result_Examples.pdf).
 
 - **Filter** Example showing filtering using an EMA, a Butterworth modified filter, and a type 2 Zero-lag EMA.
 
-- **Kalman** Example showing filtering using the three types of Kalman filter, alpha, alpha-beta, and alpha-beta-gamma.
+- **Kalman** Example showing filtering using the three types of Kalman filter (alpha, alpha-beta, and alpha-beta-gamma).
 
-- **FFT_boot** Example showing the generation of surrogates time-series using the Fourier-transform algorithm and the discrete differences.
+- **FFT_boot** Example showing the generation of surrogates time-series using the Fourier-transform algorithm and discrete differences.
 
-- **ME_boot** Example showing the generation of surrogates time-series using the using maximum entropy bootstrap algorithm and the discrete differences.
+- **ME_boot** Example showing the generation of surrogates time-series using the maximum entropy bootstrap algorithm and discrete differences.
 
 - **Response** Example showing the frequency response and lag/group delay for a band-pass filter.

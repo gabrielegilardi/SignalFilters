@@ -649,7 +649,7 @@ class Filter:
         plt.ylabel('$h$ [db]')
         legend = ['Filter', '-3dB']
         plt.legend(legend)
-        plt.title('Frequency Response', fontweight="bold")
+        plt.title('Frequency Response')
 
         # Plot and format lag/group delay
         plt.subplot(1, 2, 2)
@@ -658,7 +658,8 @@ class Filter:
         plt.xlim(np.amin(wf), np.amax(wf))
         plt.xlabel(r'$\omega$ [rad/sample]')
         plt.ylabel('$gd$ [samples]')
-        plt.title('Lag / Group Delay', fontweight="bold")
+        plt.title('Lag / Group Delay')
 
         # Show plots
+        plt.suptitle('Example "Response"')
         plt.show()

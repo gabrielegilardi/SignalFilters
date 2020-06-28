@@ -45,9 +45,9 @@
 
 ## Main Parameters
 
-`example` Name of the example to run.
+`example` Name of the example to run (Filters, Kalman, FFT_boot, ME_boot, Response).
 
-`data_file` File name with the dataset (csv format). The extension is added automatically.
+`data_file` File with the dataset (csv format). The extension is added automatically.
 
 `X` Dataset to filter/time-series (input). It must be a 1D array, i.e. of shape `(:, )` or `(:, 1)` or `(1, :)`.
 
@@ -57,10 +57,20 @@
 
 `Y` Filtered dataset (output).
 
-`X_synt` Synthetic time-series (output)
+`X_synt` Surrogate/synthetic generated time-series (output)
 
 `n_reps` Number of surrogates/synthetic time-series to generate.
 
 ## Examples
 
-There are five examples: **Filters**, **Kalman**, **Response**, **FFT_boot**, **ME_boot**. For all, the dataset in *spx.csv* is used.
+There are five examples (all of them use the dataset in *spx.csv*). The results are shown [here](Results_Examples.pdf).
+
+- **Filter** Example showing filtering using an EMA, a Butterworth modified filter, and a type 2 Zero-lag EMA.
+
+- **Kalman** Example showing filtering using the three types of Kalman filter, alpha, alpha-beta, and alpha-beta-gamma.
+
+- **FFT_boot** Example showing the generation of surrogates time-series using the Fourier-transform algorithm and the discrete differences.
+
+- **ME_boot** Example showing the generation of surrogates time-series using the using maximum entropy bootstrap algorithm and the discrete differences.
+
+- **Response** Example showing the frequency response and lag/group delay for a band-pass filter.
